@@ -27,10 +27,6 @@ export default function PrivacyScreen() {
           Anyone who controls this device can alter local records, GPS, or admin settings. Server
           validation, integrity checks, and authoritative face matching belong in a future backend.
         </Text>
-        <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
-          Use Settings → Delete all local data to wipe profile, attendance, and media from this
-          device.
-        </Text>
       </Card>
     </ScrollView>
   );

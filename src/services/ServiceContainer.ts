@@ -6,15 +6,12 @@ import { CompanyRepository } from '@/features/companies/repositories/CompanyRepo
 import { EmployeeRepository } from '@/features/employees/repositories/EmployeeRepository';
 import { OfficeRepository } from '@/features/offices/repositories/OfficeRepository';
 import { SettingsRepository } from '@/features/settings/repositories/SettingsRepository';
-import { clearBoundCompanyId, getBoundCompanyId } from '@/firebase/deviceBinding';
-import { getFirestoreDb, isFirebaseConfigured } from '@/firebase/config';
+import { isFirebaseConfigured } from '@/firebase/config';
 import { FirestoreAttendanceRepository } from '@/firebase/repositories/FirestoreAttendanceRepository';
 import { FirestoreCompanyRepository } from '@/firebase/repositories/FirestoreCompanyRepository';
 import { FirestoreEmployeeRepository } from '@/firebase/repositories/FirestoreEmployeeRepository';
 import { FirestoreOfficeRepository } from '@/firebase/repositories/FirestoreOfficeRepository';
 import { FirestoreSettingsRepository } from '@/firebase/repositories/FirestoreSettingsRepository';
-import { companyDoc, officesCol } from '@/firebase/paths';
-import { deleteDoc, getDocs } from 'firebase/firestore';
 import { HashPinAuthProvider } from '@/services/auth/PinAuthProvider';
 import { ImageStorageService } from '@/services/camera/ImageStorageService';
 import { CompositeFaceMatchProvider } from '@/services/face-verification/CompositeFaceMatchProvider';
@@ -48,7 +45,6 @@ export class ServiceContainer {
   readonly sync: NoOpAttendanceSyncService;
   readonly attendanceService: AttendanceService;
   readonly backend: 'firebase' | 'sqlite';
-  private readonly sqliteDb: SQLiteDatabase | null;
 
   private constructor(
     backend: 'firebase' | 'sqlite',
@@ -56,11 +52,9 @@ export class ServiceContainer {
     employees: EmployeesApi,
     offices: OfficesApi,
     attendance: AttendanceApi,
-    settings: SettingsApi,
-    sqliteDb: SQLiteDatabase | null = null
+    settings: SettingsApi
   ) {
     this.backend = backend;
-    this.sqliteDb = sqliteDb;
     this.companies = companies;
     this.employees = employees;
     this.offices = offices;
@@ -97,8 +91,7 @@ export class ServiceContainer {
       new FirestoreEmployeeRepository(),
       new FirestoreOfficeRepository(),
       new FirestoreAttendanceRepository(),
-      new FirestoreSettingsRepository(),
-      null
+      new FirestoreSettingsRepository()
     );
   }
 
@@ -109,33 +102,8 @@ export class ServiceContainer {
       new EmployeeRepository(db),
       new OfficeRepository(db),
       new AttendanceRepository(db),
-      new SettingsRepository(db),
-      db
+      new SettingsRepository(db)
     );
-  }
-
-  /** Wipe local/device binding. Firebase cloud company docs stay unless deleted below. */
-  async eraseDeviceData(): Promise<void> {
-    await this.attendance.deleteAll();
-    await this.images.clearAllMedia();
-    await this.employees.deleteAll();
-
-    if (this.backend === 'sqlite' && this.sqliteDb) {
-      await this.sqliteDb.execAsync(
-        'DELETE FROM employee_offices; DELETE FROM offices; DELETE FROM companies;'
-      );
-    } else {
-      const companyId = await getBoundCompanyId();
-      if (companyId) {
-        const db = getFirestoreDb();
-        const offices = await getDocs(officesCol(db, companyId));
-        await Promise.all(offices.docs.map((d) => deleteDoc(d.ref)));
-        await deleteDoc(companyDoc(db, companyId));
-      }
-      await clearBoundCompanyId();
-    }
-
-    await this.settings.clearAll();
   }
 
   static create(db?: SQLiteDatabase): ServiceContainer {

@@ -35,7 +35,8 @@ export default function KioskHomeScreen() {
   const setSelectedEmployee = useAppStore((s) => s.setSelectedEmployee);
   const [query, setQuery] = useState('');
   const [offices, setOffices] = useState<Office[]>([]);
-  const [listLoading, setListLoading] = useState(true);
+  /** True only until the first list fetch settles — avoids skeleton flash on empty refocus. */
+  const [listReady, setListReady] = useState(false);
 
   const companyName = company?.name?.trim() || 'Your company';
 
@@ -64,10 +65,9 @@ export default function KioskHomeScreen() {
 
   const refresh = useCallback(async () => {
     if (!company) {
-      setListLoading(false);
+      setListReady(true);
       return;
     }
-    setListLoading(true);
     try {
       const locs = await services.offices.listByCompany(company.id);
       setOffices(locs);
@@ -77,7 +77,7 @@ export default function KioskHomeScreen() {
         setEmployees(await services.employees.listByCompany(company.id));
       }
     } finally {
-      setListLoading(false);
+      setListReady(true);
     }
   }, [company, office, services.employees, services.offices, setEmployees]);
 
@@ -177,14 +177,22 @@ export default function KioskHomeScreen() {
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          listLoading ? (
-            <SkeletonList count={7} />
+          !listReady ? (
+            <SkeletonList count={4} />
           ) : (
-            <Text style={[styles.empty, { color: theme.textSecondary }]}>
-              {office
-                ? 'Nobody is assigned to this site yet. An admin can assign locations under Manage → People.'
-                : 'No people yet. An admin can add them under Manage → People.'}
-            </Text>
+            <View
+              style={[
+                styles.emptyBox,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No people here</Text>
+              <Text style={[styles.empty, { color: theme.textSecondary }]}>
+                {office
+                  ? 'Nobody is assigned to this site yet. An admin can assign locations under Manage → People.'
+                  : 'No people yet. An admin can add them under Manage → People.'}
+              </Text>
+            </View>
           )
         }
         renderItem={({ item }) => {
@@ -266,7 +274,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 16,
   },
-  empty: { marginTop: 32, textAlign: 'center', lineHeight: 22, paddingHorizontal: 16 },
+  emptyBox: {
+    marginTop: 12,
+    minHeight: 160,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  empty: { textAlign: 'center', lineHeight: 22, fontSize: 14 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

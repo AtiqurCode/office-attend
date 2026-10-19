@@ -46,32 +46,6 @@ export default function AdminTabScreen() {
     setSettings(next);
   };
 
-  const wipe = () => {
-    Alert.alert('Erase this device?', 'Removes company, people, punches, and photos.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Erase',
-        style: 'destructive',
-        onPress: async () => {
-          await services.eraseDeviceData();
-          if (firebase) {
-            try {
-              await signOutAccount();
-            } catch {
-              // ignore
-            }
-            setAuthUser(null);
-          }
-          setCompany(null);
-          setEmployees([]);
-          setOffice(null);
-          setSettings(await services.settings.getSettings());
-          router.replace(href(firebase ? '/auth' : '/onboarding'));
-        },
-      },
-    ]);
-  };
-
   const signOut = () => {
     Alert.alert('Sign out?', 'You will need to sign in again to manage this company.', [
       { text: 'Cancel', style: 'cancel' },
@@ -174,7 +148,6 @@ export default function AdminTabScreen() {
           {firebase ? (
             <Button title="Sign out" variant="secondary" onPress={signOut} />
           ) : null}
-          <Button title="Erase this device" variant="danger" onPress={wipe} />
         </>
       )}
 

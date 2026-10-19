@@ -22,22 +22,27 @@ export default function TodayBoardScreen() {
   const query = useQuery({
     queryKey: ['today-board', company?.id, startUtc],
     enabled: !!company,
+    // Keep last result while refreshing so the board doesn't flash skeleton ↔ empty.
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!company) return [];
       return services.attendance.listTodayForCompany(company.id, startUtc, endUtc);
     },
   });
 
+  const refetch = query.refetch;
+
   useFocusEffect(
     useCallback(() => {
-      void query.refetch();
-    }, [query])
+      void refetch();
+    }, [refetch])
   );
 
   const records = query.data ?? [];
   const completed = records.filter((r) => r.checkInAt && r.checkOutAt).length;
   const open = records.filter((r) => r.checkInAt && !r.checkOutAt).length;
-  const showSkeleton = query.isLoading || (query.isFetching && records.length === 0);
+  // First load only — never treat a settled empty list as "loading" on tab focus.
+  const showSkeleton = query.isPending && !query.isFetched;
 
   return (
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.background }]}>
@@ -45,9 +50,9 @@ export default function TodayBoardScreen() {
       <Text style={{ color: theme.textSecondary }}>{todayLabel()}</Text>
 
       <View style={styles.stats}>
-        <Stat label="Punches" value={showSkeleton ? '…' : String(records.length)} theme={theme} />
-        <Stat label="Complete" value={showSkeleton ? '…' : String(completed)} theme={theme} />
-        <Stat label="Still in" value={showSkeleton ? '…' : String(open)} theme={theme} />
+        <Stat label="Punches" value={String(records.length)} theme={theme} />
+        <Stat label="Complete" value={String(completed)} theme={theme} />
+        <Stat label="Still in" value={String(open)} theme={theme} />
       </View>
 
       {settings?.adminModeEnabled ? (
@@ -59,11 +64,14 @@ export default function TodayBoardScreen() {
       ) : null}
 
       {showSkeleton ? (
-        <SkeletonList count={5} lines={3} />
+        <SkeletonList count={3} lines={3} />
       ) : records.length === 0 ? (
-        <Text style={[styles.empty, { color: theme.textSecondary }]}>
-          No punches yet today. People punch from the Punch tab.
-        </Text>
+        <View style={[styles.emptyBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>No punches yet</Text>
+          <Text style={[styles.empty, { color: theme.textSecondary }]}>
+            People punch from the Punch tab. Today’s activity will show up here.
+          </Text>
+        </View>
       ) : (
         records.map((record) => (
           <Pressable
@@ -152,7 +160,19 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statValue: { fontSize: 22, fontWeight: '700' },
-  empty: { marginTop: 28, textAlign: 'center', lineHeight: 22 },
+  emptyBox: {
+    marginTop: 8,
+    minHeight: 160,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  empty: { textAlign: 'center', lineHeight: 22, fontSize: 14 },
   rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
