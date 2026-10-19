@@ -16,8 +16,6 @@ const config: ExpoConfig = {
         'Office Attend uses the camera to capture enrollment and attendance selfies.',
       NSLocationWhenInUseUsageDescription:
         'Office Attend uses your location during attendance to validate the office geofence.',
-      NSFaceIDUsageDescription:
-        'Office Attend can optionally require device biometrics before recording attendance.',
     },
   },
   android: {
@@ -34,8 +32,6 @@ const config: ExpoConfig = {
       'android.permission.CAMERA',
       'android.permission.ACCESS_COARSE_LOCATION',
       'android.permission.ACCESS_FINE_LOCATION',
-      'android.permission.USE_BIOMETRIC',
-      'android.permission.USE_FINGERPRINT',
     ],
     predictiveBackGestureEnabled: false,
   },
@@ -84,18 +80,29 @@ const config: ExpoConfig = {
       },
     ],
     [
-      'expo-local-authentication',
-      {
-        faceIDPermission:
-          'Allow Office Attend to use Face ID as an optional device gate before attendance.',
-      },
-    ],
-    [
       'expo-splash-screen',
       {
         backgroundColor: '#1F5C45',
         image: './assets/images/splash-icon.png',
         imageWidth: 200,
+      },
+    ],
+    [
+      'expo-build-properties',
+      {
+        android: {
+          // Universal APKs default to 4 ABIs (incl. x86 emulators). Phones only need ARM.
+          buildArchs: ['armeabi-v7a', 'arm64-v8a'],
+          // Compress native libs in the APK (smaller download; slight install I/O tradeoff).
+          useLegacyPackaging: true,
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+          enableBundleCompression: true,
+          // RN Image GIF/WebP decoders — unused (camera JPEGs only).
+          gifEnabled: false,
+          webpEnabled: false,
+          networkInspector: false,
+        },
       },
     ],
   ],
