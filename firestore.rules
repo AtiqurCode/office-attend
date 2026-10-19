@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCompanyOwner() {
+      return signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function isCompanyOwnerCreate() {
+      return signedIn() && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    function ownsParentCompany(companyId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerUid
+          == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /companies/{companyId} {
+      // resource.data.ownerUid is required so ownerUid == uid queries work.
+      allow create: if isCompanyOwnerCreate();
+      allow read: if isCompanyOwner();
+      allow update, delete: if isCompanyOwner();
+
+      match /employees/{employeeId} {
+        allow read, write: if ownsParentCompany(companyId);
+      }
+
+      match /offices/{officeId} {
+        allow read, write: if ownsParentCompany(companyId);
+      }
+
+      match /attendance/{recordId} {
+        allow read, write: if ownsParentCompany(companyId);
+
+        match /evidence/{evidenceId} {
+          allow read, write: if ownsParentCompany(companyId);
+        }
+      }
+
+      match /deviceSettings/{deviceId} {
+        allow read, write: if ownsParentCompany(companyId);
+      }
+    }
+  }
+}
