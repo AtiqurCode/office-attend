@@ -15,6 +15,7 @@ export const DEMO_OFFICE = {
 
 export const DEFAULT_SETTINGS = {
   gpsAccuracyThresholdMeters: 50,
+  /** Unused in punch flow; kept for settings schema compatibility. */
   requireBiometricGate: false,
   retainAttendanceSelfies: true,
   retainReferenceSelfie: true,

@@ -16,7 +16,6 @@ import { FirestoreSettingsRepository } from '@/firebase/repositories/FirestoreSe
 import { companyDoc, officesCol } from '@/firebase/paths';
 import { deleteDoc, getDocs } from 'firebase/firestore';
 import { HashPinAuthProvider } from '@/services/auth/PinAuthProvider';
-import { ExpoBiometricService } from '@/services/biometrics/BiometricService';
 import { ImageStorageService } from '@/services/camera/ImageStorageService';
 import { CompositeFaceMatchProvider } from '@/services/face-verification/CompositeFaceMatchProvider';
 import { BlinkEyeLivenessProvider } from '@/services/face-verification/EyeLivenessProvider';
@@ -46,7 +45,6 @@ export class ServiceContainer {
   readonly faceVerification: CompositeFaceMatchProvider;
   readonly eyeLiveness: BlinkEyeLivenessProvider;
   readonly pinAuth: HashPinAuthProvider;
-  readonly biometrics: ExpoBiometricService;
   readonly sync: NoOpAttendanceSyncService;
   readonly attendanceService: AttendanceService;
   readonly backend: 'firebase' | 'sqlite';
@@ -78,7 +76,6 @@ export class ServiceContainer {
     );
     this.eyeLiveness = new BlinkEyeLivenessProvider();
     this.pinAuth = new HashPinAuthProvider();
-    this.biometrics = new ExpoBiometricService();
     this.sync = new NoOpAttendanceSyncService();
     this.attendanceService = new AttendanceService(
       attendance,

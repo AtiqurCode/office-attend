@@ -20,9 +20,8 @@ export default function PrivacyScreen() {
           Background tracking is not used.
         </Text>
         <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
-          Face detection checks presence in a selfie. It is not face recognition, liveness
-          certification, or identity proof. Device biometrics unlock the phone action — they do not
-          identify the employee to your organization.
+          Punch identity is PIN or photo evidence. Optional face templates are on-device helpers only —
+          not certified biometrics or identity proof.
         </Text>
         <Text style={{ color: theme.warning, lineHeight: 20 }}>
           Anyone who controls this device can alter local records, GPS, or admin settings. Server
