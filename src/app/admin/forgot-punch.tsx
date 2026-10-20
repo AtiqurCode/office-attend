@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { FormKeyboardScroll } from '@/components/ui/FormKeyboardScroll';
 import { ScreenLoading } from '@/components/ui/ScreenLoading';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { TextField } from '@/components/ui/TextField';
 import { AuthMethods } from '@/constants/auth';
 import {
@@ -77,6 +78,16 @@ export default function ForgotPunchScreen() {
       cancelled = true;
     };
   }, [employeeId, services.employees]);
+
+  const employeeOptions = useMemo(
+    () =>
+      employees.map((e) => ({
+        id: e.id,
+        label: e.fullName,
+        hint: e.employeeCode,
+      })),
+    [employees]
+  );
 
   if (!settings?.adminModeEnabled) {
     return (
@@ -196,26 +207,17 @@ export default function ForgotPunchScreen() {
         Fix a missed punch. GPS is not required — add a short note for the audit trail.
       </Text>
 
-      <Text style={[styles.label, { color: theme.text }]}>Employee</Text>
-      <View style={styles.chips}>
-        {employees.map((e) => (
-          <Pressable
-            key={e.id}
-            onPress={() => setEmployeeId(e.id)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: employeeId === e.id ? theme.brand : theme.surface,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Text style={{ color: employeeId === e.id ? '#fff' : theme.text, fontWeight: '600' }}>
-              {e.fullName}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <SearchableSelect
+        label="Employee"
+        options={employeeOptions}
+        value={employeeId}
+        onChange={setEmployeeId}
+        placeholder="Search name or employee code"
+        emptyText="No people match that search"
+      />
+      {employees.length === 0 ? (
+        <Text style={{ color: theme.warning }}>No people yet — add them under Manage → People.</Text>
+      ) : null}
 
       <Text style={[styles.label, { color: theme.text }]}>Location</Text>
       <View style={styles.chips}>
