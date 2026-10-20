@@ -44,8 +44,8 @@ async function compositeIcon(outPath, canvas, eyeSize, bg) {
 }
 
 async function foregroundAdaptive(outPath) {
-  // Transparent 1024 with eye in ~66% safe zone
-  const eyeSize = 560;
+  // Transparent 1024 — keep glyph inside Android adaptive safe zone (~66%).
+  const eyeSize = 480;
   const eye = await sharp(eyeSvg(eyeSize, ink)).resize(eyeSize, eyeSize).png().toBuffer();
   const base = await solid(1024, { r: 0, g: 0, b: 0, alpha: 0 });
   await sharp(base)
@@ -58,15 +58,16 @@ async function foregroundAdaptive(outPath) {
 async function main() {
   await mkdir(images, { recursive: true });
 
-  await compositeIcon(path.join(images, 'icon.png'), 1024, 720, brand);
-  await compositeIcon(path.join(images, 'splash-icon.png'), 512, 360, brand);
-  await compositeIcon(path.join(images, 'favicon.png'), 48, 34, brand);
+  // More padding so the mark doesn’t feel cramped / clipped under masks.
+  await compositeIcon(path.join(images, 'icon.png'), 1024, 560, brand);
+  await compositeIcon(path.join(images, 'splash-icon.png'), 512, 280, brand);
+  await compositeIcon(path.join(images, 'favicon.png'), 48, 28, brand);
   await foregroundAdaptive(path.join(images, 'android-icon-foreground.png'));
 
   await sharp(await solid(1024, brand)).png().toFile(path.join(images, 'android-icon-background.png'));
   console.log('wrote assets/images/android-icon-background.png');
 
-  const monoEye = await sharp(eyeSvg(560, '#FFFFFF')).resize(560, 560).png().toBuffer();
+  const monoEye = await sharp(eyeSvg(480, '#FFFFFF')).resize(480, 480).png().toBuffer();
   const monoBase = await solid(1024, { r: 0, g: 0, b: 0, alpha: 0 });
   await sharp(monoBase)
     .composite([{ input: monoEye, gravity: 'centre' }])
