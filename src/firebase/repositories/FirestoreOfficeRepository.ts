@@ -41,7 +41,9 @@ function mapOffice(id: string, data: OfficeDoc): Office {
 }
 
 export class FirestoreOfficeRepository {
-  private db = getFirestoreDb();
+  private get db() {
+    return getFirestoreDb();
+  }
 
   private async requireCompanyId(companyId?: string | null): Promise<string> {
     const id = companyId || (await getBoundCompanyId());

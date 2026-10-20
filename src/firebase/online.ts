@@ -1,7 +1,9 @@
 import NetInfo from '@react-native-community/netinfo';
 
 export class OfflineError extends Error {
-  constructor(message = 'Internet required. Connect to Wi‑Fi or mobile data and try again.') {
+  constructor(
+    message = 'Internet required. Connect to Wi‑Fi or mobile data and try again. (Linking to your PC for Expo is not enough — the phone must reach Google/Firebase.)'
+  ) {
     super(message);
     this.name = 'OfflineError';
   }
@@ -38,10 +40,22 @@ export function isConnectivityError(error: unknown): boolean {
   return (
     code.includes('unavailable') ||
     code.includes('network') ||
+    code.includes('auth/network-request-failed') ||
     msg.includes('network') ||
     msg.includes('offline') ||
     msg.includes('internet') ||
     msg.includes('failed to fetch') ||
+    msg.includes('auth/network-request-failed') ||
+    msg.includes('could not reach cloud firestore') ||
     (msg.includes('firestore') && msg.includes('unreachable'))
   );
+}
+
+/** User-facing copy for Firebase/Google reachability failures. */
+export function connectivityMessage(error: unknown): string {
+  if (error instanceof OfflineError) return error.message;
+  if (isConnectivityError(error)) {
+    return 'Can’t reach Firebase from this phone. Use Wi‑Fi/mobile data with internet (not only LAN to the Expo PC), then retry.';
+  }
+  return error instanceof Error ? error.message : 'Failed to start app';
 }

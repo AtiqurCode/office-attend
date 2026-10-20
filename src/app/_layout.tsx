@@ -9,9 +9,17 @@ import { Pressable, Text, useColorScheme, View } from 'react-native';
 import { ScreenLoading } from '@/components/ui/ScreenLoading';
 import { APP_NAME, DATABASE_NAME } from '@/constants/config';
 import { initializeDatabase } from '@/database/client';
-import { toAuthProfile, waitForAuthUser } from '@/firebase/authAccount';
+import {
+  signOutAccount,
+  toAuthProfile,
+  waitForAuthUser,
+} from '@/firebase/authAccount';
 import { isFirebaseConfigured } from '@/firebase/config';
-import { OfflineError, assertOnline, isConnectivityError } from '@/firebase/online';
+import {
+  assertOnline,
+  connectivityMessage,
+  isConnectivityError,
+} from '@/firebase/online';
 import { ServicesContext } from '@/hooks/useServices';
 import { ServiceContainer } from '@/services/ServiceContainer';
 import { useAppStore } from '@/store/appStore';
@@ -75,27 +83,85 @@ function AppBootstrap({
         await Promise.resolve();
         if (cancelled) return;
 
-        if (mode === 'firebase') {
-          await assertOnline();
-        }
-        if (cancelled) return;
-
         const container =
           mode === 'firebase'
             ? ServiceContainer.createFirebase()
             : ServiceContainer.createSqlite(db!);
 
-        let authUser = null;
+        // Signed-out / first-run: local settings only — do not touch Firestore yet.
+        // (LAN to Expo Metro ≠ internet to Google; blocking here blocked welcome/login.)
         if (mode === 'firebase') {
           const user = await waitForAuthUser();
-          authUser = user ? toAuthProfile(user) : null;
-        }
-        if (cancelled) return;
+          if (cancelled) return;
 
-        const company =
-          mode === 'firebase' && !authUser
-            ? null
-            : await container.companies.getPrimary();
+          if (!user) {
+            const settings = await container.settings.getSettings();
+            if (cancelled) return;
+            setBootError(null);
+            setOfflineLooking(false);
+            setAuthUser(null);
+            setCompany(null);
+            setEmployees([]);
+            setOffice(null);
+            setSettings(settings);
+            setServices(container);
+            setHydrated(true);
+            await SplashScreen.hideAsync();
+            return;
+          }
+
+          try {
+            await assertOnline();
+            const authUser = toAuthProfile(user);
+            const company = await container.companies.getPrimary();
+            const settings = await container.settings.getSettings();
+            const employees = company
+              ? await container.employees.listByCompany(company.id)
+              : [];
+            const office = company
+              ? settings.selectedOfficeId
+                ? await container.offices.getById(settings.selectedOfficeId)
+                : await container.offices.getDefault(company.id)
+              : null;
+            if (cancelled) return;
+
+            setBootError(null);
+            setOfflineLooking(false);
+            setAuthUser(authUser);
+            setCompany(company);
+            setEmployees(employees);
+            setOffice(office);
+            setSettings(settings);
+            setServices(container);
+            setHydrated(true);
+            await SplashScreen.hideAsync();
+            return;
+          } catch (e) {
+            if (!isConnectivityError(e)) throw e;
+            // Stale session + no internet: drop session so UI can open welcome/login.
+            try {
+              await signOutAccount();
+            } catch {
+              // ignore
+            }
+            if (cancelled) return;
+            const settings = await container.settings.getSettings();
+            setBootError(null);
+            setOfflineLooking(false);
+            setAuthUser(null);
+            setCompany(null);
+            setEmployees([]);
+            setOffice(null);
+            setSettings(settings);
+            setServices(container);
+            setHydrated(true);
+            await SplashScreen.hideAsync();
+            return;
+          }
+        }
+
+        // SQLite path
+        const company = await container.companies.getPrimary();
         const settings = await container.settings.getSettings();
         const employees = company
           ? await container.employees.listByCompany(company.id)
@@ -109,7 +175,7 @@ function AppBootstrap({
 
         setBootError(null);
         setOfflineLooking(false);
-        setAuthUser(authUser);
+        setAuthUser(null);
         setCompany(company);
         setEmployees(employees);
         setOffice(office);
@@ -119,14 +185,8 @@ function AppBootstrap({
         await SplashScreen.hideAsync();
       } catch (e) {
         if (cancelled) return;
-        const message =
-          e instanceof OfflineError
-            ? e.message
-            : e instanceof Error
-              ? e.message
-              : 'Failed to start app';
         setOfflineLooking(isConnectivityError(e));
-        setBootError(message);
+        setBootError(connectivityMessage(e));
         setServices(null);
         await SplashScreen.hideAsync();
       }
@@ -175,6 +235,12 @@ function AppBootstrap({
         <Text style={{ color: theme.textSecondary, textAlign: 'center', lineHeight: 22 }}>
           {bootError}
         </Text>
+        {offlineLooking ? (
+          <Text style={{ color: theme.textSecondary, textAlign: 'center', lineHeight: 20, fontSize: 13 }}>
+            Tip: on the phone, open a browser and load google.com. If that fails, Expo can’t reach
+            Firebase either.
+          </Text>
+        ) : null}
         <Pressable
           onPress={() => setRetryToken((n) => n + 1)}
           style={{
@@ -208,6 +274,7 @@ function AppBootstrap({
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={stackScreenOptions}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="auth/index" options={{ title: 'Account', headerShown: false }} />
         <Stack.Screen name="onboarding/index" options={{ title: 'Company setup' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

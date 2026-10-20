@@ -102,7 +102,9 @@ function mapRecord(id: string, data: AttendanceDoc): AttendanceRecord {
 }
 
 export class FirestoreAttendanceRepository {
-  private db = getFirestoreDb();
+  private get db() {
+    return getFirestoreDb();
+  }
 
   private async requireCompanyId(): Promise<string> {
     const id = await getBoundCompanyId();

@@ -35,14 +35,21 @@ export function toAuthProfile(user: User): AuthProfile {
   };
 }
 
-export function waitForAuthUser(): Promise<User | null> {
+/** Resolves current user, or null if none / auth restore times out (offline / flaky network). */
+export function waitForAuthUser(timeoutMs = 8_000): Promise<User | null> {
   const auth = getFirebaseAuth();
   if (auth.currentUser) return Promise.resolve(auth.currentUser);
   return new Promise((resolve) => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    let settled = false;
+    const finish = (user: User | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       unsub();
       resolve(user);
-    });
+    };
+    const unsub = onAuthStateChanged(auth, (user) => finish(user));
+    const timer = setTimeout(() => finish(auth.currentUser), timeoutMs);
   });
 }
 

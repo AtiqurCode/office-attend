@@ -61,7 +61,9 @@ function mapEmployee(id: string, data: EmployeeDoc): Employee {
 }
 
 export class FirestoreEmployeeRepository {
-  private db = getFirestoreDb();
+  private get db() {
+    return getFirestoreDb();
+  }
 
   private async requireCompanyId(companyId?: string | null): Promise<string> {
     const id = companyId || (await getBoundCompanyId());

@@ -52,7 +52,9 @@ function mapCompany(id: string, data: CompanyDoc): Company {
 }
 
 export class FirestoreCompanyRepository {
-  private db = getFirestoreDb();
+  private get db() {
+    return getFirestoreDb();
+  }
 
   async getPrimary(): Promise<Company | null> {
     await assertOnline();
