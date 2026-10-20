@@ -46,8 +46,9 @@ export default function TodayBoardScreen() {
 
   return (
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.eyebrow, { color: theme.brand }]}>Attendance board</Text>
       <Text style={[styles.title, { color: theme.text }]}>Today</Text>
-      <Text style={{ color: theme.textSecondary }}>{todayLabel()}</Text>
+      <Text style={{ color: theme.textSecondary, fontSize: 15 }}>{todayLabel()}</Text>
 
       <View style={styles.stats}>
         <Stat label="Punches" value={String(records.length)} theme={theme} />
@@ -148,37 +149,38 @@ function Stat({
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 10, paddingBottom: 40 },
-  title: { fontSize: 26, fontWeight: '700' },
+  container: { padding: 16, gap: 12, paddingBottom: 40 },
+  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 0.7 },
+  title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.3 },
   stats: { flexDirection: 'row', gap: 8, marginTop: 4 },
   stat: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingVertical: 14,
     paddingHorizontal: 10,
     gap: 2,
   },
-  statValue: { fontSize: 22, fontWeight: '700' },
+  statValue: { fontSize: 22, fontWeight: '800' },
   emptyBox: {
     marginTop: 8,
     minHeight: 160,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 28,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  emptyTitle: { fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  emptyTitle: { fontSize: 17, fontWeight: '800', textAlign: 'center' },
   empty: { textAlign: 'center', lineHeight: 22, fontSize: 14 },
   rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
   },
   avatar: {

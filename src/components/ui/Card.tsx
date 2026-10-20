@@ -8,7 +8,11 @@ export function Card({ style, ...rest }: ViewProps) {
     <View
       style={[
         styles.card,
-        { backgroundColor: theme.surface, borderColor: theme.border },
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+          shadowColor: theme.text,
+        },
         style,
       ]}
       {...rest}
@@ -18,9 +22,12 @@ export function Card({ style, ...rest }: ViewProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 14,
+    padding: 16,
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
 });
-

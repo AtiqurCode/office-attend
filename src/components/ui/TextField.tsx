@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  findNodeHandle,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import { useFormScroll } from '@/components/ui/FormScrollContext';
 import { useAppTheme } from '@/hooks/useAppTheme';
 
 interface Props extends TextInputProps {
@@ -30,10 +32,15 @@ export function TextField({
   autoComplete,
   textContentType,
   inputMode,
+  onFocus,
+  onBlur,
   ...rest
 }: Props) {
   const theme = useAppTheme();
+  const formScroll = useFormScroll();
+  const inputRef = useRef<TextInput>(null);
   const [showSecret, setShowSecret] = useState(false);
+  const [focused, setFocused] = useState(false);
   const isPassword = !!secureTextEntry;
   const isEmail =
     email ||
@@ -46,6 +53,7 @@ export function TextField({
       <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
       <View style={styles.inputRow}>
         <TextInput
+          ref={inputRef}
           placeholderTextColor={theme.textSecondary}
           style={[
             styles.input,
@@ -53,7 +61,11 @@ export function TextField({
             {
               color: theme.text,
               backgroundColor: theme.surface,
-              borderColor: error ? theme.danger : theme.border,
+              borderColor: error
+                ? theme.danger
+                : focused
+                  ? theme.brand
+                  : theme.border,
             },
             style,
           ]}
@@ -71,6 +83,16 @@ export function TextField({
           }
           inputMode={isEmail ? 'email' : inputMode}
           importantForAutofill="yes"
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+            const tag = findNodeHandle(inputRef.current);
+            formScroll?.scrollToFocused(tag);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           {...rest}
         />
         {isPassword ? (
@@ -96,12 +118,12 @@ export function TextField({
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600' },
+  label: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   inputRow: { position: 'relative', justifyContent: 'center' },
   input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
+    minHeight: 52,
+    borderWidth: 1.5,
+    borderRadius: 14,
     paddingHorizontal: 14,
     fontSize: 16,
   },
@@ -109,7 +131,7 @@ const styles = StyleSheet.create({
   eyeBtn: {
     position: 'absolute',
     right: 12,
-    height: 48,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
   },

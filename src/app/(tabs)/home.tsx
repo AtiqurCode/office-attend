@@ -4,6 +4,8 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -156,8 +158,11 @@ export default function KioskHomeScreen() {
       ) : null}
 
       <Text style={[styles.heading, { color: theme.text }]}>Who’s punching?</Text>
+      <Text style={[styles.headingHint, { color: theme.textSecondary }]}>
+        Tap a person to check in or out at this site.
+      </Text>
       <TextInput
-        placeholder="Name or employee code"
+        placeholder="Search name or code"
         placeholderTextColor={theme.textSecondary}
         value={query}
         onChangeText={setQuery}
@@ -170,12 +175,18 @@ export default function KioskHomeScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         ListEmptyComponent={
           !listReady ? (
             <SkeletonList count={4} />
@@ -251,13 +262,13 @@ export default function KioskHomeScreen() {
           );
         }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContent: { padding: 16, gap: 10, paddingBottom: 40, flexGrow: 1 },
+  listContent: { padding: 16, gap: 10, paddingBottom: 80, flexGrow: 1 },
   headerBlock: { gap: 12, marginBottom: 6 },
   headerTitleWrap: { maxWidth: 280, justifyContent: 'center' },
   headerCompany: { fontSize: 17, fontWeight: '700' },
@@ -265,12 +276,13 @@ const styles = StyleSheet.create({
   siteBlock: { gap: 8 },
   siteRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   sectionLabel: { fontSize: 13, fontWeight: '600' },
-  heading: { fontSize: 22, fontWeight: '700', marginTop: 4 },
+  heading: { fontSize: 24, fontWeight: '800', marginTop: 4, letterSpacing: -0.2 },
+  headingHint: { fontSize: 14, lineHeight: 20, marginTop: -4 },
   singleSite: { fontSize: 14 },
   search: {
-    borderWidth: 1,
-    borderRadius: 12,
-    height: 50,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    height: 52,
     paddingHorizontal: 14,
     fontSize: 16,
   },

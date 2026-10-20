@@ -1,17 +1,12 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { FormKeyboardScroll } from '@/components/ui/FormKeyboardScroll';
+import { TextField } from '@/components/ui/TextField';
+import { APP_NAME } from '@/constants/config';
 import { signOutAccount } from '@/firebase/authAccount';
 import { isFirebaseConfigured } from '@/firebase/config';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -58,7 +53,7 @@ export default function AdminTabScreen() {
           setCompany(null);
           setEmployees([]);
           setOffice(null);
-          router.replace(href('/auth'));
+          router.replace(href('/auth?mode=login'));
         },
       },
     ]);
@@ -69,35 +64,32 @@ export default function AdminTabScreen() {
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.container}
     >
+      <Text style={[styles.eyebrow, { color: theme.brand }]}>{APP_NAME}</Text>
       <Text style={[styles.title, { color: theme.text }]}>Manage</Text>
-      <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
+      <Text style={{ color: theme.textSecondary, lineHeight: 21, fontSize: 15 }}>
         {company?.name ?? 'No company'}
         {office ? ` · ${office.name}` : ''}
-        {services.backend === 'firebase' ? ' · Firestore' : ' · Local SQLite (Firebase env missing)'}
       </Text>
-      {authUser?.email ? (
-        <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-          Signed in as {authUser.displayName || authUser.email}
-        </Text>
-      ) : null}
+      <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+        {services.backend === 'firebase' ? 'Cloud · Firestore' : 'Local · SQLite (Firebase env missing)'}
+        {authUser?.email ? ` · ${authUser.displayName || authUser.email}` : ''}
+      </Text>
 
       {!settings.adminModeEnabled ? (
         <View style={[styles.lockCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.lockTitle, { color: theme.text }]}>Staff only</Text>
-          <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
+          <Text style={{ color: theme.textSecondary, lineHeight: 21 }}>
             Unlock to add people, sites, fix missed punches, and export reports. The Punch tab stays
             open for everyone.
           </Text>
-          <TextInput
+          <TextField
+            label="Admin PIN"
             value={adminPin}
             onChangeText={setAdminPin}
             secureTextEntry
-            placeholder="Admin PIN"
-            placeholderTextColor={theme.textSecondary}
-            style={[
-              styles.input,
-              { color: theme.text, borderColor: theme.border, backgroundColor: theme.background },
-            ]}
+            placeholder="••••"
+            keyboardType="number-pad"
+            textContentType="password"
           />
           <Button title="Unlock" onPress={unlock} />
         </View>
@@ -205,18 +197,18 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16, paddingBottom: 40 },
-  title: { fontSize: 26, fontWeight: '700' },
-  lockCard: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 12 },
-  lockTitle: { fontSize: 18, fontWeight: '700' },
-  input: { borderWidth: 1, borderRadius: 12, minHeight: 48, paddingHorizontal: 12, fontSize: 16 },
-  section: { fontSize: 13, fontWeight: '600' },
-  group: { borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
+  container: { padding: 16, gap: 14, paddingBottom: 40 },
+  eyebrow: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
+  title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.3 },
+  lockCard: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 12 },
+  lockTitle: { fontSize: 18, fontWeight: '800' },
+  section: { fontSize: 12, fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase' },
+  group: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    minHeight: 56,
+    minHeight: 58,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,

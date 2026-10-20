@@ -54,7 +54,8 @@ export function Button({
         {
           backgroundColor: bg,
           borderColor: border,
-          opacity: disabled || loading ? 0.5 : pressed ? 0.9 : 1,
+          opacity: disabled || loading ? 0.5 : pressed ? 0.88 : 1,
+          transform: [{ scale: pressed && !disabled && !loading ? 0.985 : 1 }],
         },
         style,
       ]}
@@ -71,16 +72,16 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 50,
-    borderRadius: 12,
-    paddingHorizontal: 18,
+    minHeight: 54,
+    borderRadius: 14,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });
-
