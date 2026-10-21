@@ -1,7 +1,5 @@
-import * as Google from 'expo-auth-session/providers/google';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark } from '@/components/ui/BrandMark';
@@ -13,63 +11,45 @@ import type { Company } from '@/features/companies/types';
 import {
   registerWithEmail,
   signInWithEmail,
-  signInWithGoogleIdToken,
   toAuthProfile,
 } from '@/firebase/authAccount';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
+import {
+  isGoogleSignInConfigured,
+  signInWithGoogleNative,
+} from '@/services/auth/googleSignIn';
 import { useAppStore } from '@/store/appStore';
 import { href } from '@/utils/navigation';
 import type { User } from 'firebase/auth';
 
-WebBrowser.maybeCompleteAuthSession();
-
 type Mode = 'login' | 'register';
-
-function googleClientIds() {
-  return {
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() || undefined,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID?.trim() || undefined,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim() || undefined,
-  };
-}
 
 export default function AuthScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const params = useLocalSearchParams<{ mode?: string }>();
-  const initialMode: Mode = params.mode === 'register' ? 'register' : 'login';
+  const routeMode: Mode = params.mode === 'register' ? 'register' : 'login';
   const setAuthUser = useAppStore((s) => s.setAuthUser);
   const setCompany = useAppStore((s) => s.setCompany);
   const setOffice = useAppStore((s) => s.setOffice);
   const setEmployees = useAppStore((s) => s.setEmployees);
   const setSettings = useAppStore((s) => s.setSettings);
 
-  const [mode, setMode] = useState<Mode>(initialMode);
+  const [modeOverride, setModeOverride] = useState<Mode | null>(null);
+  const mode: Mode = modeOverride ?? routeMode;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMode(params.mode === 'register' ? 'register' : 'login');
-  }, [params.mode]);
+  const setMode = (next: Mode) => {
+    setModeOverride(next);
+    setError(null);
+  };
 
-  const clients = googleClientIds();
-  const webClientId = clients.webClientId;
-  const googleEnabled = Boolean(webClientId);
-  const resolvedWeb =
-    webClientId || '000000000000-placeholder.apps.googleusercontent.com';
-  const androidClientId = clients.androidClientId || resolvedWeb;
-  const iosClientId = clients.iosClientId || resolvedWeb;
-
-  const [request, , promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: resolvedWeb,
-    webClientId: resolvedWeb,
-    androidClientId,
-    iosClientId,
-  });
+  const googleEnabled = isGoogleSignInConfigured();
 
   const finishAuth = useCallback(
     async (user: User, company: Company) => {
@@ -128,32 +108,17 @@ export default function AuthScreen() {
   };
 
   const submitGoogle = async () => {
-    if (!webClientId) {
-      setError('Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in .env');
-      return;
-    }
     setBusy(true);
     setError(null);
     try {
-      const result = await promptAsync();
-      if (result.type !== 'success') {
-        if (result.type !== 'dismiss' && result.type !== 'cancel') {
-          setError('Google sign-in was not completed.');
-        }
+      const result = await signInWithGoogleNative();
+      if (!result.ok) {
+        if (!result.cancelled) setError(result.message);
         return;
       }
-      const idToken =
-        result.params.id_token ||
-        ('authentication' in result ? result.authentication?.idToken : null) ||
-        null;
-      if (!idToken) {
-        setError('Google sign-in did not return an ID token. Check Web client ID.');
-        return;
-      }
-      const { user, company } = await signInWithGoogleIdToken(idToken);
-      await finishAuth(user, company);
+      await finishAuth(result.user, result.company);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google sign-in failed');
+      setError(mapAuthError(e));
     } finally {
       setBusy(false);
     }
@@ -182,10 +147,7 @@ export default function AuthScreen() {
           return (
             <Pressable
               key={m}
-              onPress={() => {
-                setMode(m);
-                setError(null);
-              }}
+              onPress={() => setMode(m)}
               style={[
                 styles.segmentBtn,
                 active && { backgroundColor: theme.surface, borderColor: theme.brand },
@@ -242,15 +204,21 @@ export default function AuthScreen() {
       />
 
       {googleEnabled ? (
-        <Button
-          title="Continue with Google"
-          variant="secondary"
-          disabled={!request || busy}
-          onPress={submitGoogle}
-        />
+        <>
+          <Button
+            title="Continue with Google"
+            variant="secondary"
+            disabled={busy}
+            onPress={submitGoogle}
+          />
+          <Text style={{ color: theme.textSecondary, fontSize: 12, lineHeight: 17 }}>
+            Use the latest preview APK. If Google fails, add this build’s SHA-1 in Firebase
+            (see FIREBASE.md) — Expo Go will not work.
+          </Text>
+        </>
       ) : (
         <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
-          Google sign-in: set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (see README / FIREBASE.md).
+          Google sign-in: set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (see FIREBASE.md).
         </Text>
       )}
     </FormKeyboardScroll>
@@ -267,6 +235,9 @@ function mapAuthError(e: unknown): string {
   if (code.includes('user-not-found')) return 'No account for that email — register first.';
   if (code.includes('weak-password')) return 'Password too weak (use 6+ characters).';
   if (code.includes('invalid-email')) return 'Invalid email address.';
+  if (code.includes('permission-denied')) {
+    return 'Firestore blocked this account. Deploy firestore.rules and confirm Google Auth is enabled.';
+  }
   if (code.includes('network')) {
     return 'Network error — the phone needs internet to reach Firebase (not only Expo LAN).';
   }

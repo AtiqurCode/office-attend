@@ -1,9 +1,28 @@
 import type { ExpoConfig } from 'expo/config';
 
+const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
+
+/** `xxx.apps.googleusercontent.com` → `com.googleusercontent.apps.xxx` */
+function reversedGoogleClientId(clientId: string): string | null {
+  const suffix = '.apps.googleusercontent.com';
+  if (!clientId.endsWith(suffix)) return null;
+  const prefix = clientId.slice(0, -suffix.length);
+  return prefix ? `com.googleusercontent.apps.${prefix}` : null;
+}
+
+const iosUrlScheme =
+  reversedGoogleClientId(webClientId) ??
+  // Fallback matches current Firebase Web client (override via EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID).
+  'com.googleusercontent.apps.200870263438-5t6q960vvq3mbg2elcor8tsmen58pjih';
+
+// Optional local file (gitignored). Evaluated at config time via Node require.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const hasGoogleServices = Boolean(require('fs').existsSync('google-services.json'));
+
 const config: ExpoConfig = {
   name: 'Office Attend',
   slug: 'biometAttendence',
-  version: '1.0.3',
+  version: '1.0.6',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'biometattendence',
@@ -34,6 +53,8 @@ const config: ExpoConfig = {
       'android.permission.ACCESS_FINE_LOCATION',
     ],
     predictiveBackGestureEnabled: false,
+    // Optional: download from Firebase after adding EAS SHA-1 (see FIREBASE.md).
+    ...(hasGoogleServices ? { googleServicesFile: './google-services.json' } : {}),
   },
   web: {
     // `static` SSR cannot serialize expo-sqlite's web worker chunk.
@@ -54,6 +75,12 @@ const config: ExpoConfig = {
     ],
     'expo-sqlite',
     'expo-secure-store',
+    [
+      'react-native-nitro-google-signin',
+      {
+        iosUrlScheme,
+      },
+    ],
     [
       'expo-camera',
       {

@@ -98,6 +98,12 @@ export async function signInWithGoogleIdToken(
 }
 
 export async function signOutAccount(): Promise<void> {
+  try {
+    const { GoogleOneTapSignIn } = await import('react-native-nitro-google-signin');
+    await GoogleOneTapSignIn.signOut();
+  } catch {
+    // No Google session, or the native module is not in this binary.
+  }
   await signOut(getFirebaseAuth());
 }
 
