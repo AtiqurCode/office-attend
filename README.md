@@ -194,7 +194,8 @@ FIREBASE.md        Firebase Console checklist
 | APK opens Company setup, Expo Go shows login | Push `EXPO_PUBLIC_*` to EAS **preview**, rebuild |
 | “Online required” / `auth/network-request-failed` | Phone needs internet to Google/Firebase; test in mobile browser |
 | Keyboard covers inputs | Forms use scroll-to-focus; tab bar hides on keyboard — reload app after update |
-| Google sign-in fails on APK | Set Web + Android client IDs; add SHA-1 in Firebase for the EAS keystore |
+| Google sign-in fails / `DEVELOPER_ERROR` | Use **Web** client ID only; add EAS SHA-1/SHA-256 to Firebase Android app; rebuild APK (not Expo Go). See [FIREBASE.md](FIREBASE.md#google-sign-in) |
+| Google works in docs but not Expo Go | Expected — needs EAS/dev build with `react-native-nitro-google-signin` |
 | `expo-doctor` complains about `eas-cli` | Don’t install `eas-cli` as a project dependency — use `npx eas-cli@latest` |
 
 ---

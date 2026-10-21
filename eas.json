@@ -12,6 +12,8 @@
       }
     },
     "preview": {
+      "environment": "preview",
+      "credentialsSource": "local",
       "distribution": "internal",
       "autoIncrement": true,
       "android": {

@@ -18,6 +18,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Local Android signing (new SHA-1 keystore — never commit)
+credentials.json
+credentials/
+
 # Metro
 .metro-health-check*
 
@@ -35,6 +39,9 @@ yarn-error.*
 .env*.local
 google-services.json
 GoogleService-Info.plist
+preview-latest.apk
+apk-signing.rsa
+build-meta.json
 
 # typescript
 *.tsbuildinfo
