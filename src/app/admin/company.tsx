@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { FormKeyboardScroll } from '@/components/ui/FormKeyboardScroll';
@@ -9,11 +9,13 @@ import { AuthMethods, type AuthMethod } from '@/constants/auth';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 
 export default function AdminCompanyScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const setCompany = useAppStore((s) => s.setCompany);
   const [name, setName] = useState(company?.name ?? '');
@@ -22,7 +24,7 @@ export default function AdminCompanyScreen() {
   );
   const [busy, setBusy] = useState(false);
 
-  if (!settings?.adminModeEnabled || !company) {
+  if (!canManage(authUser, settings) || !company) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>
@@ -49,6 +51,9 @@ export default function AdminCompanyScreen() {
         enabledAuthMethods: methods,
       });
       setCompany(updated);
+      Alert.alert('Saved', 'Company updated.');
+    } catch (e) {
+      Alert.alert('Could not save', e instanceof Error ? e.message : 'Try again.');
     } finally {
       setBusy(false);
     }

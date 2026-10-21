@@ -16,18 +16,20 @@ import { importEmployeeSheetRows } from '@/features/employees/bulkImport';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import { pickSpreadsheetFile, promptSaveXlsx } from '@/utils/sheetFileIo';
 
 export default function EmployeesBulkScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const setEmployees = useAppStore((s) => s.setEmployees);
   const [busy, setBusy] = useState<'export' | 'template' | 'import' | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
 
-  if (!settings?.adminModeEnabled || !company) {
+  if (!canManage(authUser, settings) || !company) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>

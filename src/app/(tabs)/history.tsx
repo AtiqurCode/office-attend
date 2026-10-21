@@ -9,6 +9,7 @@ import { StatusPill } from '@/components/ui/StatusPill';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import { formatLocalTime, localDayBoundsUtc, todayLabel } from '@/utils/datetime';
 import { href } from '@/utils/navigation';
 
@@ -16,6 +17,7 @@ export default function TodayBoardScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const { startUtc, endUtc } = localDayBoundsUtc();
 
@@ -56,7 +58,7 @@ export default function TodayBoardScreen() {
         <Stat label="Still in" value={String(open)} theme={theme} />
       </View>
 
-      {settings?.adminModeEnabled ? (
+      {canManage(authUser, settings) ? (
         <Button
           title="Open reports"
           variant="secondary"

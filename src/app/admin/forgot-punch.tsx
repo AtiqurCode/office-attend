@@ -26,6 +26,7 @@ import type { Office } from '@/features/offices/types';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import {
   localDateInputValue,
   localDateTimeToUtcIso,
@@ -39,6 +40,7 @@ export default function ForgotPunchScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export default function ForgotPunchScreen() {
     [employees]
   );
 
-  if (!settings?.adminModeEnabled) {
+  if (!canManage(authUser, settings)) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>
@@ -136,7 +138,7 @@ export default function ForgotPunchScreen() {
       if (!open) {
         Alert.alert(
           'No open check-in',
-          'This person has no open session. Use “Full pair” or “Check-in only”.'
+          'This person has no open session. Use “In and out” or “Check-in only”.'
         );
         return;
       }
@@ -247,7 +249,7 @@ export default function ForgotPunchScreen() {
       <View style={styles.chips}>
         {(
           [
-            ['pair', 'Full pair'],
+            ['pair', 'In and out'],
             ['check_in', 'Check-in only'],
             ['check_out', 'Check-out only'],
           ] as const

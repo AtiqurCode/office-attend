@@ -25,11 +25,13 @@ import type { Office } from '@/features/offices/types';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 
 export default function AdminLocationsScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const setOffice = useAppStore((s) => s.setOffice);
   const setSettings = useAppStore((s) => s.setSettings);
@@ -110,7 +112,7 @@ export default function AdminLocationsScreen() {
     }
   };
 
-  if (!settings?.adminModeEnabled || !company) {
+  if (!settings || !canManage(authUser, settings) || !company) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>

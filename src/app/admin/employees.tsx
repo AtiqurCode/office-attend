@@ -4,10 +4,10 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { StatusPill } from '@/components/ui/StatusPill';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import { href } from '@/utils/navigation';
 
 export default function AdminEmployeesScreen() {
@@ -15,6 +15,7 @@ export default function AdminEmployeesScreen() {
   const services = useServices();
   const company = useAppStore((s) => s.company);
   const employees = useAppStore((s) => s.employees);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const setEmployees = useAppStore((s) => s.setEmployees);
   const [locCounts, setLocCounts] = useState<Record<string, number>>({});
@@ -45,7 +46,7 @@ export default function AdminEmployeesScreen() {
     }, [company, services.employees, setEmployees])
   );
 
-  if (!settings?.adminModeEnabled) {
+  if (!canManage(authUser, settings)) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>
@@ -56,16 +57,9 @@ export default function AdminEmployeesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.actions}>
-        <Button title="Add employee" onPress={() => router.push(href('/admin/employee-form'))} />
-        <Button
-          title="Bulk upload / download (Excel)"
-          variant="secondary"
-          onPress={() => router.push(href('/admin/employees-bulk'))}
-        />
-      </View>
+      <Button title="Add employee" onPress={() => router.push(href('/admin/employee-form'))} />
       <Text style={[styles.hint, { color: theme.textSecondary }]}>
-        Assign locations per employee so they can punch only at those sites.
+        Assign a site so they only punch there.
       </Text>
       <FlatList
         data={employees}
@@ -95,19 +89,18 @@ export default function AdminEmployeesScreen() {
                 </View>
               )}
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>
+                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }} numberOfLines={1}>
                   {item.fullName}
                 </Text>
-                <Text style={{ color: theme.textSecondary }}>{item.employeeCode}</Text>
+                <Text style={{ color: theme.textSecondary }} numberOfLines={1}>
+                  {item.employeeCode}
+                </Text>
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }} numberOfLines={1}>
+                  {item.pinHash ? 'PIN set' : 'No PIN'}
+                  {' · '}
+                  {n ? `${n} ${n === 1 ? 'site' : 'sites'}` : 'No site'}
+                </Text>
               </View>
-              <StatusPill
-                label={item.pinHash ? 'PIN ok' : 'No PIN'}
-                tone={item.pinHash ? 'success' : 'warning'}
-              />
-              <StatusPill
-                label={n ? `${n} loc` : 'No loc'}
-                tone={n ? 'info' : 'warning'}
-              />
             </Pressable>
           );
         }}
@@ -118,7 +111,6 @@ export default function AdminEmployeesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
-  actions: { gap: 10 },
   hint: { fontSize: 13, lineHeight: 18 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   card: {

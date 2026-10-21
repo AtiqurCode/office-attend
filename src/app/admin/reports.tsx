@@ -17,6 +17,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import {
   buildAttendanceCsv,
   buildAttendanceSummaryText,
@@ -31,7 +32,7 @@ import {
 const PERIODS: { key: ReportPeriod; label: string }[] = [
   { key: 'day', label: 'Day' },
   { key: 'week', label: 'Week' },
-  { key: 'biweek', label: 'Biweek' },
+  { key: 'biweek', label: '2 weeks' },
   { key: 'month', label: 'Month' },
   { key: 'year', label: 'Year' },
 ];
@@ -40,6 +41,7 @@ export default function ReportsScreen() {
   const theme = useAppTheme();
   const services = useServices();
   const company = useAppStore((s) => s.company);
+  const authUser = useAppStore((s) => s.authUser);
   const settings = useAppStore((s) => s.settings);
   const [period, setPeriod] = useState<ReportPeriod>('day');
   const [anchor, setAnchor] = useState(() => new Date());
@@ -75,7 +77,7 @@ export default function ReportsScreen() {
     }, [load])
   );
 
-  if (!settings?.adminModeEnabled) {
+  if (!canManage(authUser, settings)) {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text }}>Unlock admin first</Text>
@@ -122,7 +124,7 @@ export default function ReportsScreen() {
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>Reports & export</Text>
       <Text style={{ color: theme.textSecondary }}>
-        Filter by day, week, biweek, month, or year — then share CSV or a printable summary.
+        Filter by day, week, 2 weeks, month, or year — then share CSV or a printable summary.
       </Text>
 
       <View style={styles.chips}>

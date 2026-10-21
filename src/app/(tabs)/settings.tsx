@@ -12,6 +12,7 @@ import { isFirebaseConfigured } from '@/firebase/config';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
 import { useAppStore } from '@/store/appStore';
+import { canManage } from '@/utils/access';
 import { href } from '@/utils/navigation';
 
 export default function AdminTabScreen() {
@@ -28,6 +29,7 @@ export default function AdminTabScreen() {
   const setOffice = useAppStore((s) => s.setOffice);
   const [adminPin, setAdminPin] = useState('');
   const firebase = isFirebaseConfigured();
+  const unlocked = canManage(authUser, settings);
 
   if (!settings) return null;
 
@@ -70,12 +72,13 @@ export default function AdminTabScreen() {
         {company?.name ?? 'No company'}
         {office ? ` · ${office.name}` : ''}
       </Text>
-      <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
-        {services.backend === 'firebase' ? 'Cloud · Firestore' : 'Local · SQLite (Firebase env missing)'}
-        {authUser?.email ? ` · ${authUser.displayName || authUser.email}` : ''}
-      </Text>
+      {authUser ? (
+        <Text style={{ color: theme.textSecondary, fontSize: 13 }}>
+          {authUser.displayName || authUser.email}
+        </Text>
+      ) : null}
 
-      {!settings.adminModeEnabled ? (
+      {!unlocked ? (
         <View style={[styles.lockCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.lockTitle, { color: theme.text }]}>Staff only</Text>
           <Text style={{ color: theme.textSecondary, lineHeight: 21 }}>
@@ -130,13 +133,15 @@ export default function AdminTabScreen() {
             Tip: add sites → assign them on each person → pick the site on Punch before people arrive.
           </Text>
 
-          <Button
-            title="Lock manage mode"
-            variant="secondary"
-            onPress={async () =>
-              setSettings(await services.settings.updateMany({ adminModeEnabled: false }))
-            }
-          />
+          {authUser ? null : (
+            <Button
+              title="Lock manage mode"
+              variant="secondary"
+              onPress={async () =>
+                setSettings(await services.settings.updateMany({ adminModeEnabled: false }))
+              }
+            />
+          )}
           {firebase ? (
             <Button title="Sign out" variant="secondary" onPress={signOut} />
           ) : null}
