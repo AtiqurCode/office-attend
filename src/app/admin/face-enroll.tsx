@@ -28,7 +28,6 @@ export default function AdminFaceEnrollScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
-  const [hasEmbedding, setHasEmbedding] = useState(false);
 
   if (!id) {
     return (
@@ -47,7 +46,7 @@ export default function AdminFaceEnrollScreen() {
     return (
       <View style={[styles.center, { backgroundColor: theme.background }]}>
         <Text style={{ color: theme.text, textAlign: 'center' }}>
-          Camera is required to enroll a face for recognition.
+          Camera is used to save one photo. Nothing is face-matched.
         </Text>
         <Button title="Allow camera" onPress={requestPermission} />
       </View>
@@ -97,28 +96,14 @@ export default function AdminFaceEnrollScreen() {
       await services.employees.setProfileImage(id, path);
 
       setSavedPath(path);
-      setHasEmbedding(!!(embedding && embedding.length > 0));
 
-      if (embedding && embedding.length > 0) {
-        setMessage(
-          `Face enrolled + profile photo updated. Template saved (${embedding.length} dims).`
-        );
-      } else {
-        setMessage(
-          'Photo saved as profile picture. Match template could not be built — retake in good light, or use PIN.'
-        );
-      }
+      setMessage('Photo saved as their picture. It is kept as evidence, not a face match.');
 
       if (company) {
         setEmployees(await services.employees.listByCompany(company.id));
       }
 
-      Alert.alert(
-        embedding?.length ? 'Face enrolled' : 'Photo saved',
-        embedding?.length
-          ? 'Profile picture updated and match template stored.'
-          : 'Profile picture updated. Could not build a match template — retake or use PIN.'
-      );
+      Alert.alert('Photo saved', 'Their picture is updated. It is evidence, not a face match.');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Enrollment failed';
       setMessage(msg);
@@ -130,9 +115,8 @@ export default function AdminFaceEnrollScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={{ color: theme.warning, fontSize: 13, lineHeight: 18 }}>
-        Capture a clear front face. A match template is stored on-device (works in Expo Go). Re-enroll
-        if face verify was enrolled before this update.
+      <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
+        Center their face. This photo is evidence and their list picture. It is not matched.
       </Text>
 
       {previewUri && savedPath ? (
@@ -146,9 +130,7 @@ export default function AdminFaceEnrollScreen() {
 
       {message ? <Text style={{ color: theme.text }}>{message}</Text> : null}
       {savedPath ? (
-        <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-          Saved: {hasEmbedding ? 'photo + match template' : 'photo only'}
-        </Text>
+          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Saved as their picture.</Text>
       ) : null}
 
       {savedPath ? (
@@ -157,12 +139,11 @@ export default function AdminFaceEnrollScreen() {
             setSavedPath(null);
             setPreviewUri(null);
             setMessage(null);
-            setHasEmbedding(false);
           }} />
           <Button title="Done" onPress={() => router.back()} />
         </>
       ) : (
-        <Button title="Capture & enroll face" loading={busy} onPress={enroll} />
+        <Button title="Save photo" loading={busy} onPress={enroll} />
       )}
     </View>
   );
@@ -171,6 +152,6 @@ export default function AdminFaceEnrollScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
   center: { flex: 1, padding: 20, justifyContent: 'center', gap: 12 },
-  cameraWrap: { flex: 1, borderRadius: 20, overflow: 'hidden', minHeight: 360 },
-  camera: { flex: 1, borderRadius: 20, minHeight: 360 },
+  cameraWrap: { flex: 1, borderRadius: 16, overflow: 'hidden', minHeight: 180 },
+  camera: { flex: 1, borderRadius: 16, minHeight: 180 },
 });

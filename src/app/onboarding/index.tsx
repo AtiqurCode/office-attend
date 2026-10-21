@@ -30,9 +30,9 @@ export default function CompanyOnboardingScreen() {
 
   const [companyName, setCompanyName] = useState(defaultName);
   const [locationName, setLocationName] = useState('Main Office');
-  const [latitude, setLatitude] = useState('0');
-  const [longitude, setLongitude] = useState('0');
-  const [radius, setRadius] = useState('200');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [spotReady, setSpotReady] = useState(false);
   const [methods, setMethods] = useState<AuthMethod[]>([
     AuthMethods.PIN,
     AuthMethods.FACE,
@@ -50,13 +50,18 @@ export default function CompanyOnboardingScreen() {
     });
   };
 
-  const useGps = async () => {
+  const captureSpot = async (): Promise<{ lat: number; lng: number } | null> => {
     try {
       const pos = await services.location.getCurrentPosition();
       setLatitude(String(pos.latitude));
       setLongitude(String(pos.longitude));
+      setSpotReady(true);
+      setError(null);
+      return { lat: pos.latitude, lng: pos.longitude };
     } catch {
-      setError('Could not read GPS. Enter coordinates manually.');
+      setSpotReady(false);
+      setError('Could not read this phone’s location. Stand near a window and try again.');
+      return null;
     }
   };
 
@@ -64,13 +69,19 @@ export default function CompanyOnboardingScreen() {
     setBusy(true);
     setError(null);
     try {
-      const lat = Number(latitude);
-      const lng = Number(longitude);
-      const rad = Number(radius);
-      if (!companyName.trim() || Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(rad)) {
-        setError('Fill company name and valid location numbers.');
+      let lat = Number(latitude);
+      let lng = Number(longitude);
+      if (!companyName.trim()) {
+        setError('Enter the company name.');
         return;
       }
+      if (!spotReady || Number.isNaN(lat) || Number.isNaN(lng)) {
+        const spot = await captureSpot();
+        if (!spot) return;
+        lat = spot.lat;
+        lng = spot.lng;
+      }
+      const rad = 200;
 
       const existing = await services.companies.getPrimary();
       const company = existing
@@ -137,16 +148,16 @@ export default function CompanyOnboardingScreen() {
       <Text style={[styles.title, { color: theme.text }]}>Set up this workplace</Text>
       <Text style={{ color: theme.textSecondary, lineHeight: 22 }}>
         {authUser
-          ? 'Company was created from your account name. Confirm it and add your first site.'
-          : 'Employees punch on this tablet. You manage people, sites, and reports behind a PIN.'}
+          ? 'Confirm the company name, then mark this phone’s spot as the first site.'
+          : 'Name the workplace and mark where people punch. Radius can be changed later under Sites.'}
       </Text>
 
       <TextField label="Company name" value={companyName} onChangeText={setCompanyName} />
-      <TextField label="Location name" value={locationName} onChangeText={setLocationName} />
-      <TextField label="Latitude" value={latitude} onChangeText={setLatitude} keyboardType="decimal-pad" />
-      <TextField label="Longitude" value={longitude} onChangeText={setLongitude} keyboardType="decimal-pad" />
-      <TextField label="Geofence radius (m)" value={radius} onChangeText={setRadius} keyboardType="number-pad" />
-      <Button title="Use current GPS" variant="secondary" onPress={useGps} />
+      <TextField label="Site name" value={locationName} onChangeText={setLocationName} />
+      <Button title="Use this spot" variant="secondary" onPress={() => void captureSpot()} />
+      <Text style={{ color: spotReady ? theme.brand : theme.textSecondary, fontSize: 14 }}>
+        {spotReady ? 'This spot is set. You can change it later under Sites.' : 'Location not set yet.'}
+      </Text>
 
       <Text style={[styles.section, { color: theme.text }]}>Identity (pick one at kiosk)</Text>
       {(

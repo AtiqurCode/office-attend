@@ -7,7 +7,7 @@ import { ScreenLoading } from '@/components/ui/ScreenLoading';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useServices } from '@/hooks/useServices';
-import { formatLocalDateTime } from '@/utils/datetime';
+import { formatLocalDateTime, formatPunchLength } from '@/utils/datetime';
 import { formatDistance } from '@/utils/geo';
 
 export default function AttendanceDetailScreen() {
@@ -49,17 +49,20 @@ export default function AttendanceDetailScreen() {
           {employee?.fullName ?? 'Employee'}
         </Text>
         <Text style={{ color: theme.textSecondary }}>{employee?.employeeCode}</Text>
-        <StatusPill label={record.attendanceStatus} tone="warning" />
-        <Text style={{ color: theme.textSecondary }}>
-          Check-in: {formatLocalDateTime(record.checkInAt)}
+        <StatusPill
+          label={punchStateLabel(record.attendanceStatus)}
+          tone={record.attendanceStatus === 'rejected' ? 'warning' : 'success'}
+        />
+        <Text style={{ color: theme.text }}>In: {formatLocalDateTime(record.checkInAt)}</Text>
+        <Text style={{ color: theme.text }}>Out: {formatLocalDateTime(record.checkOutAt)}</Text>
+        <Text style={{ color: theme.text }}>
+          Hours: {formatPunchLength(record.checkInAt, record.checkOutAt)}
         </Text>
-        <Text style={{ color: theme.textSecondary }}>
-          Check-out: {formatLocalDateTime(record.checkOutAt)}
-        </Text>
-        <Text style={{ color: theme.textSecondary }}>Office: {office?.name ?? '—'}</Text>
-        <Text style={{ color: theme.textSecondary }}>
-          Identity method: {record.identityMethod ?? '—'}
-        </Text>
+        <Text style={{ color: theme.textSecondary }}>Site: {office?.name ?? '—'}</Text>
+        <Text style={{ color: theme.textSecondary }}>How: {howLabel(record.identityMethod)}</Text>
+        {record.locationValidationMessage ? (
+          <Text style={{ color: theme.textSecondary }}>{record.locationValidationMessage}</Text>
+        ) : null}
       </Card>
 
       <Card style={{ gap: 8 }}>
@@ -69,9 +72,6 @@ export default function AttendanceDetailScreen() {
         <Text style={{ color: theme.textSecondary }}>
           Distances: {formatDistance(record.checkInDistanceMeters)} /{' '}
           {formatDistance(record.checkOutDistanceMeters)}
-        </Text>
-        <Text style={{ color: theme.warning }}>
-          {record.locationValidationMessage ?? 'Best-effort local GPS validation only.'}
         </Text>
       </Card>
 
@@ -92,6 +92,19 @@ export default function AttendanceDetailScreen() {
       </Card>
     </ScrollView>
   );
+}
+
+function punchStateLabel(status: string): string {
+  if (status === 'rejected') return 'Rejected';
+  if (status === 'pending_verification') return 'Pending';
+  return 'Saved';
+}
+
+function howLabel(method: string | null | undefined): string {
+  if (method === 'manual') return 'Fixed by admin';
+  if (method === 'pin') return 'PIN';
+  if (method === 'face' || method === 'eye') return 'Photo';
+  return '—';
 }
 
 const styles = StyleSheet.create({

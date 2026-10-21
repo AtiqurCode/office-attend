@@ -237,8 +237,7 @@ function AppBootstrap({
         </Text>
         {offlineLooking ? (
           <Text style={{ color: theme.textSecondary, textAlign: 'center', lineHeight: 20, fontSize: 13 }}>
-            Tip: on the phone, open a browser and load google.com. If that fails, Expo can’t reach
-            Firebase either.
+            Check Wi‑Fi or mobile data, then tap Retry.
           </Text>
         ) : null}
         <Pressable

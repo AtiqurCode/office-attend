@@ -6,7 +6,7 @@ import { AuthMethods } from '@/constants/auth';
 import { Button } from '@/components/ui/Button';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAppStore } from '@/store/appStore';
-import { formatDistance } from '@/utils/geo';
+import { formatLocalTime } from '@/utils/datetime';
 import { href, paramString } from '@/utils/navigation';
 
 export default function KioskResultScreen() {
@@ -28,6 +28,7 @@ export default function KioskResultScreen() {
   const ok = paramString(params.ok) === '1';
   const employeeId = paramString(params.employeeId) || selectedEmployee?.id || '';
   const method = paramString(params.method) || AuthMethods.PIN;
+  const visibleMessage = resultMessage(paramString(params.message), paramString(params.name));
 
   useEffect(() => {
     if (!ok) return;
@@ -64,38 +65,15 @@ export default function KioskResultScreen() {
         </Text>
         <Text style={[styles.title, { color: theme.text }]}>{params.title}</Text>
         <Text style={[styles.name, { color: theme.text }]}>{params.name || '—'}</Text>
-        <Text style={[styles.message, { color: theme.textSecondary }]}>{params.message}</Text>
+        <Text style={[styles.time, { color: theme.text }]}>{formatLocalTime(new Date().toISOString())}</Text>
+        {visibleMessage ? (
+          <Text style={[styles.message, { color: theme.textSecondary }]}>{visibleMessage}</Text>
+        ) : null}
         {!ok ? (
           <Text style={[styles.retryHint, { color: theme.text }]}>
             Tap Try again to go back to PIN / photo for this person.
           </Text>
         ) : null}
-      </View>
-
-      <View style={[styles.meta, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <MetaRow
-          label="How"
-          value={method === 'manual' ? 'Admin fix' : method || '—'}
-          theme={theme}
-        />
-        <MetaRow
-          label="GPS"
-          value={
-            params.lat && params.lng
-              ? `${Number(params.lat).toFixed(5)}, ${Number(params.lng).toFixed(5)}`
-              : '—'
-          }
-          theme={theme}
-        />
-        <MetaRow
-          label="Accuracy"
-          value={
-            params.acc
-              ? `±${Math.round(Number(params.acc))} m · ${formatDistance(params.dist ? Number(params.dist) : null)}`
-              : '—'
-          }
-          theme={theme}
-        />
       </View>
 
       {ok ? (
@@ -119,21 +97,14 @@ export default function KioskResultScreen() {
   );
 }
 
-function MetaRow({
-  label,
-  value,
-  theme,
-}: {
-  label: string;
-  value: string;
-  theme: ReturnType<typeof useAppTheme>;
-}) {
-  return (
-    <View style={styles.metaRow}>
-      <Text style={{ color: theme.textSecondary, width: 72 }}>{label}</Text>
-      <Text style={{ color: theme.text, fontWeight: '600', flex: 1 }}>{value}</Text>
-    </View>
-  );
+/** Drop the coordinate dump. Keep rejection reasons. */
+function resultMessage(message: string, name: string): string | null {
+  const text = message.trim();
+  if (!text) return null;
+  const rest = name ? text.replace(name, '').replace(/^[\s·|,-]+/, '').trim() : text;
+  if (!rest) return null;
+  if (/-?\d+\.\d{3,}\s*,\s*-?\d+\.\d{3,}/.test(rest)) return null;
+  return rest;
 }
 
 const styles = StyleSheet.create({
@@ -142,9 +113,8 @@ const styles = StyleSheet.create({
   status: { fontSize: 14, fontWeight: '700', letterSpacing: 0.4 },
   title: { fontSize: 28, fontWeight: '700', textAlign: 'center' },
   name: { fontSize: 20, fontWeight: '600', textAlign: 'center' },
+  time: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
   message: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: 8 },
   retryHint: { fontSize: 14, textAlign: 'center', fontWeight: '600', marginTop: 4 },
-  meta: { borderWidth: 1, borderRadius: 12, padding: 14, gap: 10 },
-  metaRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   hint: { textAlign: 'center', fontSize: 13 },
 });

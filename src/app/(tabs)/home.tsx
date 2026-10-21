@@ -200,8 +200,8 @@ export default function KioskHomeScreen() {
               <Text style={[styles.emptyTitle, { color: theme.text }]}>No people here</Text>
               <Text style={[styles.empty, { color: theme.textSecondary }]}>
                 {office
-                  ? 'Nobody is assigned to this site yet. An admin can assign locations under Manage → People.'
-                  : 'No people yet. An admin can add them under Manage → People.'}
+                  ? 'Nobody is assigned to this site yet. Assign them under Manage → People.'
+                  : 'No people yet. Add them under Manage → People.'}
               </Text>
             </View>
           )
@@ -268,9 +268,9 @@ export default function KioskHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContent: { padding: 16, gap: 10, paddingBottom: 80, flexGrow: 1 },
-  headerBlock: { gap: 12, marginBottom: 6 },
-  headerTitleWrap: { maxWidth: 280, justifyContent: 'center' },
+  listContent: { padding: 12, gap: 8, paddingBottom: 24, flexGrow: 1 },
+  headerBlock: { gap: 10, marginBottom: 4 },
+  headerTitleWrap: { maxWidth: '100%', justifyContent: 'center' },
   headerCompany: { fontSize: 17, fontWeight: '700' },
   headerSub: { fontSize: 12, marginTop: 1 },
   siteBlock: { gap: 8 },

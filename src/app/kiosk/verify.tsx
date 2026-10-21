@@ -5,8 +5,10 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +34,8 @@ function asKioskMethod(value: string): KioskMethod | null {
 export default function KioskVerifyScreen() {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const keyMin = windowHeight < 640 ? 44 : windowHeight < 740 ? 52 : 60;
   const navigation = useNavigation();
   const services = useServices();
   const params = useLocalSearchParams<{
@@ -250,7 +254,12 @@ export default function KioskVerifyScreen() {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.background }]}>
+    <ScrollView
+      style={[styles.screen, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.screenContent}
+      keyboardShouldPersistTaps="handled"
+      bounces={false}
+    >
       {/* Person */}
       <View style={styles.personBlock}>
         {employee.profileImagePath ? (
@@ -272,17 +281,21 @@ export default function KioskVerifyScreen() {
           <View
             style={[
               styles.badge,
-              { backgroundColor: checkedIn ? theme.accentSoft : theme.brandSoft },
+              {
+                backgroundColor: checkedIn ? theme.brand : theme.surfaceMuted,
+                borderColor: checkedIn ? theme.brand : theme.border,
+                borderWidth: 1,
+              },
             ]}
           >
             <Text
               style={{
-                color: checkedIn ? theme.warning : theme.brand,
-                fontWeight: '700',
+                color: checkedIn ? '#fff' : theme.textSecondary,
+                fontWeight: '800',
                 fontSize: 12,
               }}
             >
-              {checkedIn ? 'OUT' : 'IN'}
+              {checkedIn ? 'IN' : 'OUT'}
             </Text>
           </View>
         ) : null}
@@ -355,6 +368,7 @@ export default function KioskVerifyScreen() {
                     style={({ pressed }) => [
                       styles.key,
                       {
+                        minHeight: keyMin,
                         backgroundColor: theme.surface,
                         borderColor: theme.border,
                         opacity: pressed || busy ? 0.85 : 1,
@@ -423,12 +437,13 @@ export default function KioskVerifyScreen() {
           </Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  screenContent: { flexGrow: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 16 },
   personBlock: {
     flexDirection: 'row',

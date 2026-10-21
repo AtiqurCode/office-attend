@@ -150,3 +150,19 @@ export function localDateInputValue(reference = new Date()): string {
 export function localTimeInputValue(reference = new Date()): string {
   return `${pad2(reference.getHours())}:${pad2(reference.getMinutes())}`;
 }
+
+/** Hours between two punches. `Still in` when checkout has not happened. */
+export function formatPunchLength(
+  checkInAt: string | null | undefined,
+  checkOutAt: string | null | undefined
+): string {
+  if (!checkInAt) return '—';
+  if (!checkOutAt) return 'Still in';
+  const ms = new Date(checkOutAt).getTime() - new Date(checkInAt).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return '—';
+  const mins = Math.round(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+}

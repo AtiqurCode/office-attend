@@ -204,21 +204,15 @@ export default function AuthScreen() {
       />
 
       {googleEnabled ? (
-        <>
-          <Button
-            title="Continue with Google"
-            variant="secondary"
-            disabled={busy}
-            onPress={submitGoogle}
-          />
-          <Text style={{ color: theme.textSecondary, fontSize: 12, lineHeight: 17 }}>
-            Use the latest preview APK. If Google fails, add this build’s SHA-1 in Firebase
-            (see FIREBASE.md) — Expo Go will not work.
-          </Text>
-        </>
+        <Button
+          title="Continue with Google"
+          variant="secondary"
+          disabled={busy}
+          onPress={submitGoogle}
+        />
       ) : (
         <Text style={{ color: theme.textSecondary, fontSize: 13, lineHeight: 18 }}>
-          Google sign-in: set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (see FIREBASE.md).
+          Google sign-in isn’t available on this install.
         </Text>
       )}
     </FormKeyboardScroll>
@@ -245,7 +239,7 @@ function mapAuthError(e: unknown): string {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, gap: 14, paddingTop: 48 },
+  container: { padding: 20, gap: 12, paddingTop: 28, paddingBottom: 28 },
   brand: { fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
   title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.3 },
   segment: {
